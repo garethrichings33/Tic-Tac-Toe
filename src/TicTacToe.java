@@ -21,6 +21,12 @@ public class TicTacToe implements ActionListener {
     private int numberOfMoves;
 
     public TicTacToe() {
+        createGameFrame();
+        initialiseGame();
+        defineResultFrame();
+    }
+
+    private void createGameFrame() {
         frame = new JFrame("Tic-Tac-Toe");
 
         whoseTurn = new JLabel("Player 1 Next");
@@ -41,11 +47,15 @@ public class TicTacToe implements ActionListener {
         frame.setSize(250,400);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
+    }
 
+    private void initialiseGame() {
         numberOfMoves = 0;
         nextPlayer = 0;
         resetScores();
+    }
 
+    private void defineResultFrame() {
         resultFrame = new JFrame();
         resultLabel = new JLabel();
         resultLabel.setBounds(10,5, 100, 30);
@@ -75,16 +85,19 @@ public class TicTacToe implements ActionListener {
             for (int j = 0; j < 3; j++) {
                 xPosition = xOrigin + j * xSize;
                 yPosition = yOrigin + i * ySize;
-
-                gridButtons[i][j] = new JButton();
-                gridButtons[i][j].setFont(new Font("Arial", Font.PLAIN, 50));
-                gridButtons[i][j].setBounds(xPosition, yPosition, xSize, ySize);
-                gridButtons[i][j].setActionCommand(Integer.toString(i) + Integer.toString(j));
-                gridButtons[i][j].addActionListener(this);
-                gridButtons[i][j].setName("button" + i + j);
-                frame.add(gridButtons[i][j]);
+                addGridButton(xSize, ySize, xPosition, yPosition, i, j);
             }
         }
+    }
+
+    private void addGridButton(int xSize, int ySize, int xPosition, int yPosition, int i, int j) {
+        gridButtons[i][j] = new JButton();
+        gridButtons[i][j].setFont(new Font("Arial", Font.PLAIN, 50));
+        gridButtons[i][j].setBounds(xPosition, yPosition, xSize, ySize);
+        gridButtons[i][j].setActionCommand(Integer.toString(i) + Integer.toString(j));
+        gridButtons[i][j].addActionListener(this);
+        gridButtons[i][j].setName("button" + i + j);
+        frame.add(gridButtons[i][j]);
     }
 
     private void resetScores(){
@@ -145,16 +158,23 @@ public class TicTacToe implements ActionListener {
     }
 
     private void endGame(boolean stalemate){
-        gridReset();
+        showResultFrame(stalemate);
+        resetGame();
+    }
+
+    private void showResultFrame(boolean stalemate) {
         if(!stalemate){
             updateScores(nextPlayer);
             resultLabel.setText("Player " + (nextPlayer+1) + " wins!");
         }
-        else
+        else {
             resultLabel.setText("Draw!");
-
+        }
         resultFrame.setVisible(true);
+    }
 
+    private void resetGame() {
+        gridReset();
         getNextPlayer();
         whoseTurn.setText("Player " + (nextPlayer+1) +" Next");
         undoList.removeAllElements();
@@ -165,38 +185,52 @@ public class TicTacToe implements ActionListener {
     public void actionPerformed(ActionEvent event) {
         String buttonPressed = event.getActionCommand().toString();
 
-        if(buttonPressed == "New Game"){
+        if(buttonPressed == "New Game")
+            newGame();
+        else if (buttonPressed == "Reset")
             gridReset();
-            resetScores();
-            whoseTurn.setText("Player 1 Next");
-            nextPlayer = 0;
-        }
-        else if (buttonPressed == "Reset") {
-            gridReset();
-        }
-        else if (buttonPressed == "Undo") {
+        else if (buttonPressed == "Undo")
             undoLastMove();
-        }
+        else
+            performTurn(buttonPressed);
+    }
+
+    private void performTurn(String buttonPressed) {
+        int i = Integer.parseInt(String.valueOf(buttonPressed.charAt(0)));
+        int j = Integer.parseInt(String.valueOf(buttonPressed.charAt(1)));
+        placeNoughtOrCross(i, j);
+        checkResult(buttonPressed, i, j);
+    }
+
+    private void checkResult(String buttonPressed, int i, int j) {
+        if(checkWin(i, j))
+            endGame(false);
+        else if(numberOfMoves == 9)
+            endGame(true);
         else{
-            int i = Integer.parseInt(String.valueOf(buttonPressed.charAt(0)));
-            int j = Integer.parseInt(String.valueOf(buttonPressed.charAt(1)));
-            if(nextPlayer == 0)
-                gridButtons[i][j].setText("O");
-            else
-                gridButtons[i][j].setText("X");
-
-            gridButtons[i][j].setEnabled(false);
-            numberOfMoves++;
-
-            if(checkWin(i,j))
-                endGame(false);
-            else if(numberOfMoves == 9)
-                endGame(true);
-            else{
-                undoList.push(buttonPressed);
-                getNextPlayer();
-            }
+            confirmMove(buttonPressed);
         }
+    }
 
+    private void placeNoughtOrCross(int i, int j) {
+        if(nextPlayer == 0)
+            gridButtons[i][j].setText("O");
+        else
+            gridButtons[i][j].setText("X");
+
+        gridButtons[i][j].setEnabled(false);
+        numberOfMoves++;
+    }
+
+    private void confirmMove(String buttonPressed) {
+        undoList.push(buttonPressed);
+        getNextPlayer();
+    }
+
+    private void newGame() {
+        gridReset();
+        resetScores();
+        whoseTurn.setText("Player 1 Next");
+        nextPlayer = 0;
     }
 }
